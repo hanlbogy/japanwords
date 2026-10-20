@@ -520,8 +520,39 @@
     let showMeaningsState = false;
     let messageTimeout;
 
-    // 커스텀 메시지 표시 함수 (alert 대체)
-    function showCustomMessage(msg) {
+    // 모바일 TTS 지원을 위한 상태 및 보이스 배열
+    let ttsInitialized = false;
+    let availableVoices = [];
+
+    // 비동기로 보이스 목록 불러오기
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      // 보이스가 변경/로드될 때 배열 업데이트 (모바일 대응)
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
+    // 모바일 오디오 락 해제 (첫 터치/클릭 시 빈 음성 재생)
+    function initTTS() {
+      if (!ttsInitialized && 'speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(utter);
+        ttsInitialized = true;
+        document.removeEventListener('touchstart', initTTS);
+        document.removeEventListener('click', initTTS);
+      }
+    }
+    // 화면 어디든 첫 인터랙션 시 권한 해제
+    document.addEventListener('touchstart', initTTS);
+    document.addEventListener('click', initTTS);
+
+    // 커스텀 메시지 표시 함수 (alert 대체 - 토스트 알림)
+    function showToast(msg) {
       const msgBox = document.getElementById('customMessageBox');
       msgBox.innerText = msg;
       msgBox.classList.add('show');
@@ -635,11 +666,21 @@
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(textToSpeak);
         utter.lang = 'ja-JP';
+        
+        // 일본어 보이스 명시적 할당 (iOS/Android 대응)
+        if (availableVoices.length === 0) loadVoices();
+        const jaVoice = availableVoices.find(voice => 
+          voice.lang === 'ja-JP' || voice.lang === 'ja_JP' || voice.lang.includes('ja')
+        );
+        if (jaVoice) {
+          utter.voice = jaVoice;
+        }
+
         utter.rate = 0.85; // 학생들이 듣기 편한 속도
         window.speechSynthesis.speak(utter);
       } else {
-        // 브라우저 경고창(alert) 대신 커스텀 메시지로 대체
-        showCustomMessage('이 브라우저에서는 음성 합성(TTS) 기능을 지원하지 않습니다.');
+        // 브라우저 경고창(alert) 대신 커스텀 토스트 메시지로 대체
+        showToast('이 브라우저에서는 음성 합성(TTS) 기능을 지원하지 않습니다.');
       }
     }
   </script>
