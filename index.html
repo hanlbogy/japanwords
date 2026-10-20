@@ -355,9 +355,35 @@
     .btn-sound:hover {
       background: #e2e8f0;
     }
+
+    /* 커스텀 메시지 박스 */
+    .custom-message-box {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ef4444;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-weight: bold;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .custom-message-box.show {
+      opacity: 1;
+      visibility: visible;
+      top: 40px;
+    }
   </style>
 </head>
 <body>
+
+  <!-- 커스텀 에러 메시지 박스 -->
+  <div id="customMessageBox" class="custom-message-box"></div>
 
   <header>
     <h1>🎰 일본어 문장 뽑기 팩토리</h1>
@@ -492,6 +518,19 @@
 
     let currentSelected = [null, null, null, null];
     let showMeaningsState = false;
+    let messageTimeout;
+
+    // 커스텀 메시지 표시 함수 (alert 대체)
+    function showCustomMessage(msg) {
+      const msgBox = document.getElementById('customMessageBox');
+      msgBox.innerText = msg;
+      msgBox.classList.add('show');
+      
+      clearTimeout(messageTimeout);
+      messageTimeout = setTimeout(() => {
+        msgBox.classList.remove('show');
+      }, 3000);
+    }
 
     // 단일 파트 뽑기
     function drawPart(index) {
@@ -599,7 +638,8 @@
         utter.rate = 0.85; // 학생들이 듣기 편한 속도
         window.speechSynthesis.speak(utter);
       } else {
-        alert('이 브라우저에서는 음성 합성(TTS) 기능을 지원하지 않습니다.');
+        // 브라우저 경고창(alert) 대신 커스텀 메시지로 대체
+        showCustomMessage('이 브라우저에서는 음성 합성(TTS) 기능을 지원하지 않습니다.');
       }
     }
   </script>
